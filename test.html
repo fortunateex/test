@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Quality Service</title>
+  
+  <!-- 引入 Bootstrap -->
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  />
+  <!-- 引入 Nunito Sans 字体 -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* 全局基础样式 */
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #333;
+      font-family: 'Nunito Sans', 'Microsoft YaHei', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1, "lnum" 1;
+      -webkit-font-feature-settings: "tnum" 1, "lnum" 1;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 30px;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    h2, h3 {
+      color: #444;
+      font-weight: 700;
+      margin-top: 20px;
+    }
+
+    /* Tabs 样式微调 */
+    .nav-tabs .nav-link {
+      font-weight: 600;
+    }
+    .nav-tabs .nav-link.active {
+      background-color: #e9ecef;
+      border-color: #dee2e6 #dee2e6 #fff;
+    }
+
+    /* 拖拽区样式 */
+    .drag-area {
+      border: 2px dashed #007bff;
+      padding: 20px;
+      border-radius: 10px;
+      position: relative;
+      margin: 20px 0;
+      background: #e9ecef;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .drag-area.highlight {
+      background-color: #cce5ff;
+      border-color: #007bff;
+    }
+    .file-display {
+      margin-top: 10px;
+      color: #555;
+      font-size: 16px;
+    }
+
+    /* 列表样式 */
+    .tables-list-container {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      background: #f9f9f9;
+      margin-bottom: 20px;
+    }
+    .tables-list div {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .tables-list label {
+      margin-left: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    /* 输入区样式 */
+    .task-input-container {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    .task-input-container label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-top: 10px;
+    }
+    .task-input-container input {
+      margin-bottom: 10px;
+    }
+
+    /* JSON 输入区样式 */
+    .json-input-container {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    .json-input-container textarea {
+      width: 100%;
+      height: 150px;
+      resize: none;
+      font-family: monospace, 'Nunito Sans';
+      margin-bottom: 10px;
+    }
+
+    /* 加载中动画样式 */
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .loading span {
+      display: inline-block;
+      margin: 0 5px;
+      width: 10px;
+      height: 10px;
+      background-color: #007bff;
+      border-radius: 50%;
+      animation: loading 1.2s infinite;
+    }
+    .loading span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .loading span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes loading {
+      0%, 80%, 100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    /* 按钮与表单控件样式 */
+    button.btn {
+      margin-top: 20px;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      font-weight: 600;
+    }
+    button.btn:hover {
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    .btn-info {
+      background-color: #17a2b8;
+      border: none;
+    }
+    .btn-info:hover {
+      background-color: #138496;
+    }
+    .btn-warning {
+      background-color: #ffc107;
+      border: none;
+    }
+    .btn-warning:hover {
+      background-color: #e0a800;
+    }
+    .btn-success {
+      background-color: #28a745;
+      border: none;
+    }
+    .btn-success:hover {
+      background-color: #218838;
+    }
+    .btn-secondary {
+      border: none;
+    }
+    .btn-secondary:hover {
+      background-color: #6c757d;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2 class="text-center mb-4">Video Quality Service</h2>
+
+    <!-- 导航选项卡 -->
+    <ul class="nav nav-tabs" id="featureTabs" role="tablist">
+      <li class="nav-item">
+        <a
+          class="nav-link active"
+          id="tab-upload-json"
+          data-toggle="tab"
+          href="#pane-upload-json"
+          role="tab"
+          aria-controls="pane-upload-json"
+          aria-selected="true"
+        >Upload JSON</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          id="tab-train-vmaf"
+          data-toggle="tab"
+          href="#pane-train-vmaf"
+          role="tab"
+          aria-controls="pane-train-vmaf"
+          aria-selected="false"
+        >Train VMAF</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          id="tab-data-process"
+          data-toggle="tab"
+          href="#pane-data-process"
+          role="tab"
+          aria-controls="pane-data-process"
+          aria-selected="false"
+        >Data Process</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          id="tab-metric-eval"
+          data-toggle="tab"
+          href="#pane-metric-eval"
+          role="tab"
+          aria-controls="pane-metric-eval"
+          aria-selected="false"
+        >Metric Evaluation</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          id="tab-json-direct"
+          data-toggle="tab"
+          href="#pane-json-direct"
+          role="tab"
+          aria-controls="pane-json-direct"
+          aria-selected="false"
+        >Enter JSON Directly</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          id="tab-download-tables"
+          data-toggle="tab"
+          href="#pane-download-tables"
+          role="tab"
+          aria-controls="pane-download-tables"
+          aria-selected="false"
+        >Download Tables</a>
+      </li>
+    </ul>
+
+    <!-- 选项卡内容 -->
+    <div class="tab-content" id="featureTabsContent">
+      <!-- 1. Upload JSON -->
+      <div
+        class="tab-pane fade show active"
+        id="pane-upload-json"
+        role="tabpanel"
+        aria-labelledby="tab-upload-json"
+      >
+        <h3 class="mt-4">Upload Configuration JSON</h3>
+        <div class="drag-area" id="drag-area">
+          <p class="file-display">
+            Drag and drop a JSON file here or <strong>click to select</strong> a file.
+          </p>
+          <input type="file" id="fileInput" name="json_file" hidden />
+        </div>
+        <button
+          type="button"
+          class="btn btn-primary btn-block"
+          id="uploadButton"
+          onclick="uploadJson()"
+        >
+          Upload
+        </button>
+      </div>
+
+      <!-- 2. Train VMAF -->
+      <div
+        class="tab-pane fade"
+        id="pane-train-vmaf"
+        role="tabpanel"
+        aria-labelledby="tab-train-vmaf"
+      >
+        <h3 class="mt-4">Train VMAF</h3>
+        <div class="task-input-container">
+          <label for="uidVmaf">User ID:</label>
+          <input
+            type="text"
+            id="uidVmaf"
+            class="form-control"
+            placeholder="Enter User ID"
+            required
+          />
+
+          <label for="inputTableNameVmaf">Input Table Names:</label>
+          <input
+            type="text"
+            id="inputTableNameVmaf"
+            class="form-control"
+            placeholder="Enter Input Table Names, e.g., a, b"
+            required
+          />
+
+          <label for="videoGroupDivision">Video Group Division (optional):</label>
+          <input
+            type="text"
+            id="videoGroupDivision"
+            class="form-control"
+            placeholder='[[1, 2], [3, 4]]'
+          />
+
+          <!-- Toggle Button -->
+          <button
+            type="button"
+            class="btn btn-secondary btn-block mt-2"
+            onclick="toggleAdvancedSettings()"
+          >
+            Show/Hide Advanced Settings
+          </button>
+
+          <!-- Advanced Settings Container -->
+          <div id="advancedSettings" style="display: none;">
+            <label for="modelTypeVmaf">Model Type:</label>
+            <input
+              type="text"
+              id="modelTypeVmaf"
+              class="form-control"
+              value="LIBSVMNUSVR"
+            />
+
+            <label for="vmafFeatures">VMAF Features:</label>
+            <input
+              type="text"
+              id="vmafFeatures"
+              class="form-control"
+              value='["vif_scale0", "vif_scale1", "vif_scale2", "vif_scale3", "adm2", "motion2"]'
+            />
+
+            <label for="additionalTableName">Additional Table Names:</label>
+            <input
+              type="text"
+              id="additionalTableName"
+              class="form-control"
+              placeholder="e.g., table3, table4"
+            />
+
+            <label for="additionalGroupDivision">Additional Group Division:</label>
+            <input
+              type="text"
+              id="additionalGroupDivision"
+              class="form-control"
+              placeholder='[[7], [8, 9]]'
+            />
+
+            <label for="mergedGroupDivision">Merged Group Division:</label>
+            <input
+              type="text"
+              id="mergedGroupDivision"
+              class="form-control"
+              placeholder='[[1, 2, 7], [3, 4, 8]]'
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-info btn-block"
+            id="trainButton"
+            onclick="createVmafTask()"
+          >
+            Generate and Upload VMAF Task
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Data Process -->
+      <div
+        class="tab-pane fade"
+        id="pane-data-process"
+        role="tabpanel"
+        aria-labelledby="tab-data-process"
+      >
+        <h3 class="mt-4">Data Process</h3>
+        <div class="task-input-container">
+          <label for="uidDataProcess">User ID:</label>
+          <input
+            type="text"
+            id="uidDataProcess"
+            class="form-control"
+            placeholder="Enter User ID"
+            required
+          />
+
+          <label for="inputTableNameDataProcess">Input Table Name:</label>
+          <input
+            type="text"
+            id="inputTableNameDataProcess"
+            class="form-control"
+            placeholder="Enter Input Table Name"
+            required
+          />
+
+          <label for="outputTableNameDataProcess">Output Table Name (Optional):</label>
+          <input
+            type="text"
+            id="outputTableNameDataProcess"
+            class="form-control"
+            placeholder="Enter Output Table Name"
+          />
+
+          <button
+            type="button"
+            class="btn btn-info btn-block"
+            id="dataProcessButton"
+            onclick="createDataProcessTask()"
+          >
+            Generate and Upload Task
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. Metric Evaluation -->
+      <div
+        class="tab-pane fade"
+        id="pane-metric-eval"
+        role="tabpanel"
+        aria-labelledby="tab-metric-eval"
+      >
+        <h3 class="mt-4">Metric Evaluation</h3>
+        <div class="task-input-container">
+          <label for="uidMetric">User ID:</label>
+          <input
+            type="text"
+            id="uidMetric"
+            class="form-control"
+            placeholder="Enter User ID"
+            required
+          />
+
+          <label for="inputTableNameMetric">Input Table Name:</label>
+          <input
+            type="text"
+            id="inputTableNameMetric"
+            class="form-control"
+            placeholder="Enter Input Table Name"
+            required
+          />
+
+          <div class="form-check mb-3 mt-3">
+            <input
+              type="checkbox"
+              id="frameQuality"
+              class="form-check-input"
+            />
+            <label class="form-check-label" for="frameQuality">Frame Quality</label>
+          </div>
+
+          <div class="form-check mb-3">
+            <input
+              type="checkbox"
+              id="segmentQuality"
+              class="form-check-input"
+            />
+            <label class="form-check-label" for="segmentQuality"
+              >Segment Quality</label
+            >
+          </div>
+
+          <label for="outputTableNameMetric">Output Table Name (Optional):</label>
+          <input
+            type="text"
+            id="outputTableNameMetric"
+            class="form-control"
+            placeholder="Enter Output Table Name"
+          />
+
+          <label for="flags">Flags:</label>
+          <input
+            type="text"
+            id="flags"
+            class="form-control"
+            placeholder="Enter Flags"
+            required
+          />
+
+          <label for="modelPath">Model Path:</label>
+          <input
+            type="text"
+            id="modelPath"
+            class="form-control"
+            placeholder="Enter Model Path"
+            required
+          />
+
+          <button
+            type="button"
+            class="btn btn-info btn-block"
+            id="metricButton"
+            onclick="createMetricEvaluationTask()"
+          >
+            Generate and Upload Evaluation Task
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Enter JSON Directly -->
+      <div
+        class="tab-pane fade"
+        id="pane-json-direct"
+        role="tabpanel"
+        aria-labelledby="tab-json-direct"
+      >
+        <h3 class="mt-4">Enter JSON Directly</h3>
+        <div class="json-input-container">
+          <label for="jsonInput">JSON Input:</label>
+          <textarea
+            id="jsonInput"
+            class="form-control"
+            placeholder="Enter your JSON command here..."
+          ></textarea>
+          <button
+            type="button"
+            class="btn btn-warning btn-block"
+            id="jsonUploadButton"
+            onclick="uploadJsonDirectly()"
+          >
+            Upload JSON Directly
+          </button>
+        </div>
+      </div>
+
+      <!-- 6. Download Tables -->
+      <div
+        class="tab-pane fade"
+        id="pane-download-tables"
+        role="tabpanel"
+        aria-labelledby="tab-download-tables"
+      >
+        <h3 class="mt-4">Download Tables</h3>
+        <div class="tables-list-container">
+          <div id="tablesList" class="tables-list"></div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-success btn-block"
+          id="downloadButton"
+          onclick="downloadSelectedTables()"
+        >
+          Download Selected
+        </button>
+      </div>
+    </div>
+
+    <!-- 全局加载中动画 -->
+    <div class="loading" id="loadingIndicator">
+      <span></span>
+      <span></span>
+      <span></span>
+      <p>Processing your request, please wait...</p>
+    </div>
+  </div>
+
+
+  <!-- JS 脚本区（保持原有逻辑不变） -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
